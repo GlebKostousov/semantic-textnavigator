@@ -7,8 +7,6 @@
 ![Code style: ruff](https://img.shields.io/badge/code%20style-ruff-000000.svg)
 ![Type checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue.svg)
 
-> Онлайн демо-стенд: **[https://reportflow.ru/stn/](https://reportflow.ru/stn/)**
-
 Локальное приложение для закупщика: загрузить договоры и связанные документы,
 увидеть действующую сумму, срок поставки и ставку неустойки, открыть основание
 в исходном тексте. У каждого значения есть файл и точная цитата. Если сведений
