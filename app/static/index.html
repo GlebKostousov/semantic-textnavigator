@@ -6,59 +6,90 @@
     <meta name="color-scheme" content="light">
     <meta name="description" content="Сверка условий договоров поставки: действующие суммы, сроки и неустойка с цитатами из первоисточников.">
     <title>TextNavigator — условия поставки</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Crect x='4' y='3' width='24' height='26' rx='6' fill='%232d5c47'/%3E%3Cpath d='M9 10h14M9 15h14M9 20h8' stroke='%23e8f3ed' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='21' cy='21' r='3.8' fill='%233d8061' stroke='%23e8f3ed' stroke-width='1.5'/%3E%3Cpath d='M24 24l3 3' stroke='%23e8f3ed' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none'%3E%3Crect x='4' y='3' width='24' height='26' rx='6' fill='%2315803d'/%3E%3Cpath d='M9 10h14M9 15h14M9 20h8' stroke='%23f0fdf4' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='21' cy='21' r='3.8' fill='%23166534' stroke='%23f0fdf4' stroke-width='1.5'/%3E%3Cpath d='M24 24l3 3' stroke='%23f0fdf4' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="static/styles.css">
     <script type="module" src="static/app.js"></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Перейти к содержанию</a>
+
     <header class="masthead">
       <div class="masthead-brand">
         <a class="wordmark" href="./" aria-label="TextNavigator, главная">
           <svg class="brand-symbol" aria-hidden="true" viewBox="0 0 32 32" fill="none">
-            <rect x="4" y="3" width="24" height="26" rx="6" fill="#2d5c47"/>
-            <path d="M9 10h14M9 15h14M9 20h8" stroke="#e8f3ed" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="21" cy="21" r="3.8" fill="#3d8061" stroke="#e8f3ed" stroke-width="1.5"/>
-            <path d="M24 24l3 3" stroke="#e8f3ed" stroke-width="2" stroke-linecap="round"/>
+            <rect x="4" y="3" width="24" height="26" rx="6" fill="#15803d"/>
+            <path d="M9 10h14M9 15h14M9 20h8" stroke="#f0fdf4" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="21" cy="21" r="3.8" fill="#166534" stroke="#f0fdf4" stroke-width="1.5"/>
+            <path d="M24 24l3 3" stroke="#f0fdf4" stroke-width="2" stroke-linecap="round"/>
           </svg>
-          <span>TextNavigator</span>
+          <span class="brand-name">TextNavigator</span>
         </a>
-        <span class="masthead-badge">Сверка условий</span>
+        <span class="masthead-badge">Аудит договоров</span>
       </div>
 
       <form id="upload-form" class="masthead-toolbar" aria-label="Параметры проверки и загрузка файлов">
-        <div class="toolbar-item date-item">
-          <label for="as-of" class="toolbar-label">Дата:</label>
-          <input id="as-of" name="as_of" type="date" value="2026-03-10" required title="Дата проверки условий">
+        <div class="toolbar-group">
+          <label for="as-of" class="toolbar-label">Дата проверки:</label>
+          <input id="as-of" name="as_of" type="date" value="2026-03-10" required title="Дата проверки условий договоров">
         </div>
-        <div class="toolbar-item">
+
+        <div class="toolbar-divider" aria-hidden="true"></div>
+
+        <div class="toolbar-group">
           <label class="button button-outline file-picker" for="file-input" title="Выбрать файлы договоров в формате TXT">
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><path d="M10 13V3m0 0L6 7m4-4 4 4M4 12v4h12v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
             <span id="file-summary">Выбрать TXT</span>
           </label>
           <input id="file-input" class="visually-hidden file-input" type="file" accept=".txt,text/plain" multiple>
+
+          <button id="analyze-button" class="button button-primary" type="submit" disabled>Сверить</button>
+          <button id="demo-button" type="button" class="button button-secondary">Демо-комплект ↗</button>
+          <button id="clear-button" class="button button-quiet" type="button" title="Сбросить загруженные данные" hidden>✕ Сбросить</button>
         </div>
-        <button id="analyze-button" class="button button-primary" type="submit" disabled>Проверить</button>
-        <button id="demo-button" type="button" class="button button-soft">Учебный комплект ↗</button>
-        <button id="clear-button" class="button button-quiet" type="button" title="Очистить" hidden>✕</button>
       </form>
     </header>
 
     <main id="main" class="page">
-      <p id="pending-note" class="pending-note" hidden>Параметры изменены. Нажмите «Проверить», чтобы пересчитать условия.</p>
-      <p id="loading-status" class="loading-status" role="status" aria-live="polite" hidden>
+      <div id="pending-note" class="notice notice-pending" hidden>
+        Параметры изменены. Нажмите «Сверить», чтобы пересчитать условия на новую дату.
+      </div>
+      <div id="loading-status" class="loading-status" role="status" aria-live="polite" hidden>
         <span class="spinner" aria-hidden="true"></span>
-        <span id="loading-text">Проверяем документы…</span>
-      </p>
+        <span id="loading-text">Выполняется семантический анализ условий…</span>
+      </div>
       <div id="error-message" class="notice notice-error" role="alert" hidden></div>
 
       <section id="empty-state" class="empty-state" aria-labelledby="empty-title">
         <div class="empty-icon-wrap" aria-hidden="true">
-          <svg viewBox="0 0 32 32" fill="none"><rect x="4" y="3" width="24" height="26" rx="6" stroke="currentColor" stroke-width="1.8"/><path d="M9 10h14M9 15h14M9 20h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="21" cy="21" r="3.8" stroke="currentColor" stroke-width="1.5"/><path d="M24 24l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <svg viewBox="0 0 40 40" fill="none">
+            <rect x="6" y="4" width="28" height="32" rx="6" stroke="#94a3b8" stroke-width="2"/>
+            <path d="M12 12h16M12 18h16M12 24h10" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="27" cy="27" r="5" fill="#f8fafc" stroke="#15803d" stroke-width="2"/>
+            <path d="M31 31l4 4" stroke="#15803d" stroke-width="2" stroke-linecap="round"/>
+          </svg>
         </div>
-        <h2 id="empty-title">Сверка условий договоров</h2>
-        <p>Загрузите TXT-файлы договоров со связанными документами или нажмите <strong>«Учебный комплект ↗»</strong> для демонстрации.</p>
-        <p class="empty-hint">Условия изменяет только подписанное соглашение, вступившее в силу к дате проверки. Каждое значение ссылается на точный абзац первоисточника.</p>
+        <h2 id="empty-title">Сверка условий договоров и допсоглашений</h2>
+        <p class="empty-subtitle">Автоматическое определение действующей суммы, сроков поставки и неустойки на выбранную дату с прямыми ссылками на первоисточники.</p>
+
+        <div class="empty-actions">
+          <button type="button" class="button button-primary" onclick="document.querySelector('#demo-button').click()">Открыть демо-комплект ↗</button>
+          <label class="button button-outline file-picker" for="file-input">Загрузить свои TXT-файлы</label>
+        </div>
+
+        <div class="empty-rules">
+          <div class="rule-item">
+            <span class="rule-icon">✓</span>
+            <span><strong>Юридическая сила:</strong> условия меняет только подписанное соглашение, вступившее в силу к дате проверки.</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">✓</span>
+            <span><strong>Прозрачность:</strong> каждое число и дата подтверждены точной цитатой из конкретного абзаца файла.</span>
+          </div>
+          <div class="rule-item">
+            <span class="rule-icon">✓</span>
+            <span><strong>Контроль рисков:</strong> несогласованные письма и проекты фиксируются отдельно без искажения действующих условий.</span>
+          </div>
+        </div>
       </section>
 
       <section id="results" class="results" aria-label="Результаты проверки" hidden>
@@ -66,75 +97,105 @@
 
         <div class="workspace">
           <div class="contract-workspace">
-            <div class="control-strip">
-              <div class="quick-scenarios" role="region" aria-label="Контрольные вопросы задания">
-                <span class="quick-title">Вопросы:</span>
-                <div class="quick-buttons">
-                  <button type="button" class="scenario-pill" data-scenario="q1" title="Срок поставки по договору STN-101 на 10 марта 2026">1. Срок STN-101</button>
-                  <button type="button" class="scenario-pill" data-scenario="q2" title="Сумма договора STN-102">2. Сумма STN-102</button>
-                  <button type="button" class="scenario-pill" data-scenario="q3" title="Сумма договора STN-103">3. Сумма STN-103</button>
-                  <button type="button" class="scenario-pill" data-scenario="q4" title="Поставки раньше 1 апреля 2026 и переносы">4. До 01.04</button>
-                  <button type="button" id="scenario-reset" class="scenario-reset" hidden>Сбросить ✕</button>
+
+            <!-- Control Bar: Quick questions & filters -->
+            <section class="card control-card" aria-label="Управление выборкой">
+              <div class="scenarios-row">
+                <span class="scenarios-label">Контрольные вопросы:</span>
+                <div class="scenarios-list" role="region" aria-label="Контрольные вопросы задания">
+                  <button type="button" class="scenario-pill" data-scenario="q1" title="Срок поставки по договору STN-101 на 10 марта 2026">
+                    <span class="scenario-num">1</span> Срок STN-101
+                  </button>
+                  <button type="button" class="scenario-pill" data-scenario="q2" title="Сумма договора STN-102">
+                    <span class="scenario-num">2</span> Сумма STN-102
+                  </button>
+                  <button type="button" class="scenario-pill" data-scenario="q3" title="Сумма договора STN-103">
+                    <span class="scenario-num">3</span> Сумма STN-103
+                  </button>
+                  <button type="button" class="scenario-pill" data-scenario="q4" title="Поставки раньше 1 апреля 2026 года">
+                    <span class="scenario-num">4</span> До 01.04
+                  </button>
+                  <button type="button" id="scenario-reset" class="scenario-reset" hidden>✕ Сбросить</button>
                 </div>
               </div>
 
-              <div class="filters" role="search" aria-label="Фильтры договоров">
+              <div class="filters-row" role="search" aria-label="Фильтры договоров">
                 <div class="search-wrap">
                   <svg class="search-icon" aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M13.5 13.5l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-                  <input id="contract-search" type="search" placeholder="Поиск договора или поставщика (с опечатками)…" autocomplete="off">
+                  <input id="contract-search" type="search" placeholder="Поиск по договору или контрагенту (с опечатками)…" autocomplete="off">
                 </div>
-                <div class="filter-group">
-                  <label class="filter-date-label" for="delivery-before">
-                    <span>Срок до:</span>
+
+                <div class="filter-controls">
+                  <label class="filter-field" for="delivery-before">
+                    <span class="filter-field-label">Срок поставки до:</span>
                     <input id="delivery-before" type="date">
                   </label>
-                  <label class="checkbox-pill" for="proposals-only">
+
+                  <label class="checkbox-control" for="proposals-only">
                     <input id="proposals-only" type="checkbox">
-                    <span>Есть перенос</span>
+                    <span>Только с переносом</span>
                   </label>
                 </div>
               </div>
-            </div>
 
-            <p id="filter-note" class="filter-note" hidden></p>
+              <p id="filter-note" class="filter-note" hidden></p>
+            </section>
 
-            <div class="table-wrap" tabindex="0" aria-label="Таблица договоров">
-              <table class="contracts-table">
-                <caption class="visually-hidden">Действующие условия договоров. Нажмите на значение, чтобы увидеть источник.</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Договор и поставщик</th>
-                    <th scope="col">Сумма, ₽</th>
-                    <th scope="col">Срок поставки</th>
-                    <th scope="col">Неустойка</th>
-                    <th scope="col">Изменения</th>
-                  </tr>
-                </thead>
-                <tbody id="contracts-body"></tbody>
-              </table>
-            </div>
+            <!-- Contracts Table Card -->
+            <section class="card table-card" aria-label="Сводная таблица договоров">
+              <div class="card-header table-card-header">
+                <div class="table-title-wrap">
+                  <h3 class="card-title">Договоры поставки</h3>
+                  <span id="results-summary" class="results-summary-badge" role="status"></span>
+                </div>
+                <span class="table-instruction">Кликните по сумме, сроку или неустойке для перехода к первоисточнику</span>
+              </div>
 
-            <div class="table-footer-bar">
-              <span id="results-summary" class="results-summary" role="status"></span>
-              <span class="table-tip">Кликните по сумме, сроку или неустойке для перехода к цитате.</span>
-            </div>
+              <div class="table-wrap" tabindex="0" aria-label="Таблица договоров">
+                <table class="contracts-table">
+                  <caption class="visually-hidden">Действующие условия договоров. Нажмите на значение, чтобы увидеть источник.</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Договор и поставщик</th>
+                      <th scope="col">Действующая сумма</th>
+                      <th scope="col">Срок поставки</th>
+                      <th scope="col">Неустойка</th>
+                      <th scope="col">Изменения и статус</th>
+                    </tr>
+                  </thead>
+                  <tbody id="contracts-body"></tbody>
+                </table>
+              </div>
 
-            <p id="no-matches" class="no-matches" hidden>По этому запросу ничего не найдено. Попробуйте изменить формулировку.</p>
-            <section id="contract-details" class="contract-details" aria-label="Подробности договора"></section>
+              <p id="no-matches" class="no-matches" hidden>По заданным критериям договоров не найдено. Попробуйте изменить поисковый запрос.</p>
+            </section>
+
+            <!-- Selected Contract Details -->
+            <section id="contract-details" class="contract-details" aria-label="Детальные условия выбранного договора"></section>
           </div>
 
-          <aside id="source-panel" class="source-panel" aria-labelledby="source-heading">
+          <!-- Right Column: Document Source Viewer -->
+          <aside id="source-panel" class="card source-panel" aria-labelledby="source-heading">
             <header class="source-header">
-              <div class="source-heading-line">
-                <p class="eyebrow">Первоисточник</p>
-                <button id="back-to-contract" type="button" class="text-button back-to-contract">К условиям ↑</button>
+              <div class="source-header-top">
+                <div class="source-tag">
+                  <span class="source-tag-dot"></span>
+                  <span>Первоисточник</span>
+                </div>
+                <button id="back-to-contract" type="button" class="text-button back-to-contract">К таблице ↑</button>
               </div>
-              <h2 id="source-heading">Выберите условие</h2>
-              <label class="visually-hidden" for="source-select">Открыть документ</label>
-              <select id="source-select" aria-label="Открыть документ"></select>
+
+              <h2 id="source-heading" class="source-heading">Выберите условие</h2>
+
+              <div class="source-select-wrap">
+                <label class="visually-hidden" for="source-select">Выбрать документ</label>
+                <select id="source-select" aria-label="Выбрать документ"></select>
+              </div>
+
               <div id="source-meta" class="source-meta"></div>
-              <p id="source-hint" class="helper">Нажмите на любое поле договора, чтобы увидеть цитату в исходном документе.</p>
+              <p id="source-hint" class="source-hint">Кликните по условию договора в таблице или карточке, чтобы увидеть цитату в исходном документе.</p>
             </header>
+
             <div id="source-scroll" class="source-scroll" tabindex="0" aria-label="Текст исходного документа">
               <p class="source-empty">Здесь отобразится текст файла с выделением основания.</p>
             </div>

@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Code Quality & Types
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Set up Python 3.13
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Check formatting (ruff format)
+        run: uv run ruff format --check .
+
+      - name: Lint codebase (ruff check)
+        run: uv run ruff check .
+
+      - name: Static type analysis (mypy strict)
+        run: uv run mypy
+
+  test:
+    name: Unit Tests & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          version: "latest"
+
+      - name: Set up Python 3.13
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync --all-groups
+
+      - name: Run test suite with coverage
+        run: |
+          uv run pytest --cov=app --cov-report=term-missing --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 7
+
+  frontend-check:
+    name: Frontend Syntax Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Validate JavaScript syntax
+        run: |
+          for f in app/static/*.js; do
+            node -c "$f"
+          done
