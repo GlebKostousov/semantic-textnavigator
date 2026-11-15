@@ -21,8 +21,11 @@ export function renderTable({ contracts, selectedNumber, selectedField, onSelect
       const title = field === "amount" ? "сумму" : field === "delivery_date" ? "срок поставки" : "неустойку";
       control.setAttribute("aria-label", `Проверить ${title} договора ${contract.number}`);
       control.append(element("span", `fact-value fact-${fact.state}`, factValue(fact, field, { currency: false })));
-      const note = fact.amended ? "Изменено допсоглашением" : "Проверить основание";
-      control.append(element("span", "fact-note", note));
+      if (fact.amended) {
+        control.append(element("span", "tag-amended", "ДС"));
+      } else if (fact.state === "review") {
+        control.append(element("span", "tag-review", "уточнить"));
+      }
       cell.append(control);
       row.append(cell);
     }

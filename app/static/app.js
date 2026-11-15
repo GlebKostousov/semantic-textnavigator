@@ -1,6 +1,7 @@
 import { hasDeliveryProposal, longDate } from "./format.js";
 import { markSelection, renderDetails, renderNotices, renderTable } from "./components.js";
 import { renderSource } from "./source.js";
+import { matchContract } from "./search.js";
 
 const elements = {
   form: document.querySelector("#upload-form"),
@@ -129,11 +130,10 @@ function selectFact(number, field, origin = "initial") {
 }
 
 function filteredContracts() {
-  const query = elements.search.value.trim().toLocaleLowerCase("ru-RU");
+  const query = elements.search.value;
   const before = elements.before.value;
   return state.data.contracts.filter((contract) => {
-    const identity = `${contract.number} ${contract.supplier || ""}`.toLocaleLowerCase("ru-RU");
-    if (query && !identity.includes(query)) return false;
+    if (query && !matchContract(contract, query)) return false;
     if (before && (contract.delivery_date.state !== "confirmed" || !contract.delivery_date.value || contract.delivery_date.value >= before)) return false;
     if (elements.proposals.checked && !hasDeliveryProposal(contract)) return false;
     return true;
@@ -215,12 +215,12 @@ async function analyze(source) {
   try {
     let response;
     if (source === "demo") {
-      response = await fetch(`/api/demo?as_of=${encodeURIComponent(elements.asOf.value)}`);
+      response = await fetch(`api/demo?as_of=${encodeURIComponent(elements.asOf.value)}`);
     } else {
       const form = new FormData();
       form.append("as_of", elements.asOf.value);
       for (const file of state.files) form.append("files", file, file.name);
-      response = await fetch("/api/analyze", { method: "POST", body: form });
+      response = await fetch("api/analyze", { method: "POST", body: form });
     }
     const data = await readResponse(response);
     state.source = source;
