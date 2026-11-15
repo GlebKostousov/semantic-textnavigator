@@ -1,10 +1,10 @@
 /**
  * Умный поиск договоров:
  * 1. Числа: номер договора (101, 102, 103, 01, 1), суммы (840000, 840 000, 840, 1380, 1.38),
- *    даты (30.04, 20.03, 30.04.2026, 2026) и ставки неустойки (0.1, 0,1, 0.05).
- * 2. Текст: название поставщика, реквизиты, защита от опечаток (Levenshtein)
- *    и случайной раскладки клавиатуры (RU <-> EN).
- * 3. Стоп-слова: «договор», «контракт», «поставщик», «№» не ломают поиск.
+ *    даты (30.04, 20.03, 30.04.2026, 2026) и ставки неустойки (0.1, 0,1, 0.05, 0,05).
+ * 2. Текст: наименование контрагента, реквизиты, опечатки (Levenshtein)
+ *    и случайная раскладка клавиатуры (RU <-> EN).
+ * 3. Стоп-слова: «договор», «контракт», «поставщик», «№» не сбивают фильтрацию.
  */
 
 const RU_TO_EN = {
@@ -31,11 +31,15 @@ function translit(str, map) {
   return res;
 }
 
+/** Нормализует текст для сравнения, сохраняя точки и запятые внутри чисел/дат */
 export function normalize(str) {
   return String(str || "")
     .toLocaleLowerCase("ru-RU")
     .replace(/ё/g, "е")
-    .replace(/[«»""''.,\-_/\\()№#]/g, " ")
+    .replace(/[«»""''_\/\\()№#]/g, " ")
+    .replace(/[-]/g, " ")
+    // Удаляем точки/запятые только если они НЕ между цифрами
+    .replace(/(?<=\D)[.,]|[.,](?=\D)/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -155,7 +159,7 @@ export function matchContract(contract, rawQuery) {
   const textCondensed = condense(fullText);
   const queryCondensed = condense(rawQuery);
 
-  // 1. Быстрое полное вхождение (прямое или без знаков препинания)
+  // 1. Быстрое прямое вхождение
   if (textNorm.includes(normQuery)) return true;
   if (queryCondensed && textCondensed.includes(queryCondensed)) return true;
 
@@ -178,27 +182,28 @@ export function matchContract(contract, rawQuery) {
     if (nonStop.length > 0) tokens = nonStop;
   }
 
-  // 4. Проверка всех токенов
+  // 4. Проверка совпадения каждого токена
   const textWords = textNorm.split(" ").filter((w) => w.length > 0);
 
   return tokens.every((qToken) => {
-    // Числовой токен (например, "101", "840000", "840", "30", "2026")
+    // А) Дата или десятичная дробь (например, "20.03", "30.04", "30.04.2026", "0.1", "0,05")
+    if (/^\d+[.,]\d+(?:[.,]\d+)?$/.test(qToken)) {
+      const qDot = qToken.replace(/,/g, ".");
+      const qComma = qToken.replace(/\./g, ",");
+      return searchStrings.some((s) => {
+        const sLower = s.toLocaleLowerCase("ru-RU");
+        return sLower.includes(qDot) || sLower.includes(qComma);
+      });
+    }
+
+    // Б) Чистый номер (например: "101", "840000", "840", "1380", "2026")
     const isNumeric = /^\d+$/.test(qToken);
     if (isNumeric) {
-      // Ищем точное вхождение подстроки чисел
-      // Например: "101" в "stn101", "840" в "840000", "01" в "101" или "01_contract"
       if (textCondensed.includes(qToken)) return true;
       return textWords.some((w) => w.includes(qToken));
     }
 
-    // Десятичная дробь или дата (например: "0.1", "0,1", "30.04", "20.03")
-    if (/^\d+[.,]\d+$/.test(qToken)) {
-      const qDot = qToken.replace(",", ".");
-      const qComma = qToken.replace(".", ",");
-      return fullText.includes(qDot) || fullText.includes(qComma);
-    }
-
-    // Короткий текстовый токен (1-2 символа)
+    // В) Короткий текстовый токен (1-2 символа)
     if (qToken.length <= 2) {
       const qTokenEn = translit(qToken, RU_TO_EN);
       return textWords.some((w) => {
@@ -207,7 +212,7 @@ export function matchContract(contract, rawQuery) {
       });
     }
 
-    // Текстовый токен >= 3 символов с нечетким поиском
+    // Г) Текстовый токен >= 3 символов с нечетким поиском
     const qTokenEn = translit(qToken, RU_TO_EN);
     return textWords.some((w) => {
       const wEn = translit(w, RU_TO_EN);
