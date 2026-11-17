@@ -53,6 +53,8 @@ def create_app(*, examples_dir: Path | None = None) -> FastAPI:
             "connect-src 'self'; "
             "frame-ancestors 'none';"
         )
+        if response.headers.get("content-type", "").startswith("text/html"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         return response
 
     app.exception_handler(NavigatorError)(handle_navigator_error)
