@@ -10,6 +10,7 @@ const elements = {
   asOf: document.querySelector("#as-of"),
   analyze: document.querySelector("#analyze-button"),
   demo: document.querySelector("#demo-button"),
+  emptyDemo: document.querySelector("#empty-demo-button"),
   clear: document.querySelector("#clear-button"),
   pending: document.querySelector("#pending-note"),
   loading: document.querySelector("#loading-status"),
@@ -40,6 +41,7 @@ function setBusy(busy) {
   state.busy = busy;
   elements.analyze.disabled = busy || !state.source;
   elements.demo.disabled = busy;
+  if (elements.emptyDemo) elements.emptyDemo.disabled = busy;
   elements.clear.disabled = busy;
   elements.files.disabled = busy;
   elements.asOf.disabled = busy;
@@ -329,6 +331,7 @@ elements.files.addEventListener("change", () => {
 });
 elements.form.addEventListener("submit", (event) => { event.preventDefault(); analyze(state.source); });
 elements.demo.addEventListener("click", () => analyze("demo"));
+elements.emptyDemo?.addEventListener("click", () => analyze("demo"));
 elements.clear.addEventListener("click", clear);
 elements.asOf.addEventListener("change", markPending);
 elements.search.addEventListener("input", () => { clearScenarioPills(); updateFilters(); });
